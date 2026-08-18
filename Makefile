@@ -21,5 +21,6 @@ clean:
 	find . -type d -name ".pytest_cache" -exec rm -rf {} +
 	find . -type f -name "*.pyc" -delete
 	rm -rf build dist *.egg-info
+	rm -rf .venv
 
 .PHONY: all install run test lint clean
