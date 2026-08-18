@@ -1,0 +1,29 @@
+[project]
+name = "sitegap-finder"
+version = "0.1.0"
+description = "Find local businesses with no website listed on Google Places."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    { name = "Diogo Serra" },
+]
+dependencies = []
+
+[project.scripts]
+sitegap = "src.__main__:main"
+
+[dependency-groups]
+dev = [
+    "flake8>=7.0",
+    "mypy>=1.11",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.mypy]
+strict = true
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
