@@ -1,4 +1,4 @@
-ARGS ?= "Porto, Portugal" psychologists --limit 20
+ARGS ?= "Algarve, Portugal" psychologists --limit 100
 
 all: install
 
