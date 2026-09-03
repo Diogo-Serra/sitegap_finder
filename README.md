@@ -1,11 +1,11 @@
 # SiteGap Finder
 
-SiteGap finds local businesses that have no real website — whether Google Places lists no website at all, or only a Facebook/Instagram page — and exports their public contact details so web developers can identify potential clients.
+SiteGap finds local businesses that have no real website - whether Google Places lists no website at all, or only a Facebook/Instagram page - and exports their public contact details so web developers can identify potential clients.
 
 ## How it works
 
 1. Searches Google Places for a category and location.
-2. Removes every business that has a real website, but **keeps** businesses whose only "website" is a social media page (Facebook, Instagram, Linktree, WhatsApp, or a free `business.site` page) — these are prime leads.
+2. Removes every business that has a real website, but **keeps** businesses whose only "website" is a social media page (Facebook, Instagram, Linktree, WhatsApp, or a free `business.site` page) - these are prime leads.
 3. Searches public results across multiple targeted queries (business directories, common free-mail providers, and generic contact pages) for a public email, and scores each candidate so an email on the business's own domain outranks a coincidental free-mail match.
 4. Caches results in a local SQLite database so re-running a search skips businesses that were already checked recently, and builds a growing lead list over time.
 5. Saves the business name, email (with a confidence tier), phone number, Google Maps link, and website-gap reason to a report.
@@ -18,7 +18,7 @@ Email addresses are never guessed. If no reliable public email is found, the fie
 - [uv](https://docs.astral.sh/uv/)
 - A Google Cloud API key with **Places API (New)** enabled
 
-No third-party Python dependencies are required — everything runs on the standard library.
+No third-party Python dependencies are required - everything runs on the standard library.
 
 ## Installation
 
@@ -93,14 +93,14 @@ A spreadsheet-ready file with columns: `name, category, email, email_confidence,
 
 ### Email confidence tiers
 
-- `business_domain` — the email's domain matches the business name (highest confidence, most actionable).
-- `free_mail` — a Gmail/Hotmail/Outlook/Sapo/Yahoo/etc. address associated with the business.
-- `other` — a plausible but unverified match; review before contacting.
+- `business_domain` - the email's domain matches the business name (highest confidence, most actionable).
+- `free_mail` - a Gmail/Hotmail/Outlook/Sapo/Yahoo/etc. address associated with the business.
+- `other` - a plausible but unverified match; review before contacting.
 
 ### Website gap reasons
 
-- `no_website` — Google Places lists no website at all.
-- `social_only` — the only "website" on file is a Facebook/Instagram page or a free auto-generated page.
+- `no_website` - Google Places lists no website at all.
+- `social_only` - the only "website" on file is a Facebook/Instagram page or a free auto-generated page.
 
 ## Commands
 
