@@ -9,4 +9,7 @@ build/
 dist/
 leads.txt
 *-leads.txt
+leads.csv
+*-leads.csv
+sample-leads.*
 *.db

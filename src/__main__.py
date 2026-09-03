@@ -9,10 +9,10 @@ import sys
 import time
 from pathlib import Path
 
-from src import cache
+from src import cache, fixtures
 from src.config import DEFAULT_CACHE_PATH, DEFAULT_QUERIES, DEFAULT_REFRESH_DAYS, load_dotenv
-from src.email_search import find_public_email
-from src.places import Lead, PlacesError, search_without_website
+from src.email_search import FetchSearch, find_public_email, request_search
+from src.places import FetchPage, Lead, PlacesError, request_page, search_without_website
 from src.report import summarize, write_report
 
 logger = logging.getLogger(__name__)
@@ -58,15 +58,27 @@ def parse_args() -> argparse.Namespace:
         help="Write every cached lead to a CSV file and exit, without searching",
     )
     parser.add_argument("-v", "--verbose", action="store_true", help="Show debug logging")
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Run the full pipeline on built-in sample data; no API key or network needed",
+    )
     return parser.parse_args()
 
 
-def collect_leads(api_key: str, location: str, queries: list[str], limit: int) -> list[Lead]:
+def collect_leads(
+    api_key: str,
+    location: str,
+    queries: list[str],
+    limit: int,
+    fetch_page: FetchPage | None = None,
+) -> list[Lead]:
     """Search each category and remove duplicate businesses."""
     unique_leads: dict[str, Lead] = {}
     for query in queries:
         print(f"Searching for {query} in {location}...", file=sys.stderr)
-        for lead in search_without_website(api_key, query, location, limit):
+        page_fetcher = fetch_page if fetch_page is not None else request_page
+        for lead in search_without_website(api_key, query, location, limit, page_fetcher):
             identity = lead["place_id"] or f'{lead["name"]}|{lead["address"]}'
             unique_leads.setdefault(identity, lead)
     return list(unique_leads.values())
@@ -78,6 +90,7 @@ def add_public_emails(
     *,
     refresh_emails: bool,
     refresh_days: int,
+    fetch_search: FetchSearch | None = None,
 ) -> None:
     """Enrich leads with public emails, reusing fresh cached results."""
     for index, lead in enumerate(leads, start=1):
@@ -93,13 +106,15 @@ def add_public_emails(
             continue
 
         print(f"Checking email {index}/{len(leads)}: {lead['name']}...", file=sys.stderr)
-        match = find_public_email(lead["name"], lead["address"])
+        search_fetcher = fetch_search if fetch_search is not None else request_search
+        match = find_public_email(lead["name"], lead["address"], search_fetcher)
         lead["email"] = match.email
         lead["email_confidence"] = match.confidence
         lead["email_source"] = match.source
         if conn is not None and place_id:
             cache.record_email_check(conn, place_id, match.email, match.confidence, match.source)
-        time.sleep(0.5)
+        if fetch_search is None:
+            time.sleep(0.5)
 
 
 def export_cache(db_path: Path, output: Path) -> int:
@@ -135,14 +150,31 @@ def main() -> int:
     if not args.location:
         print("Error: a location is required unless using --export-cache", file=sys.stderr)
         return 2
-
-    api_key = os.environ.get("GOOGLE_PLACES_API_KEY")
-    if not api_key:
-        print("Error: add GOOGLE_PLACES_API_KEY to .env", file=sys.stderr)
-        return 2
     if args.limit < 1:
         print("Error: --limit must be at least 1", file=sys.stderr)
         return 2
+
+    if args.dry_run:
+        print(
+            "Dry run: using built-in sample data, no API key or network needed.",
+            file=sys.stderr,
+        )
+        api_key = "dry-run"
+        page_fetcher: FetchPage | None = fixtures.fetch_page
+        search_fetcher: FetchSearch | None = fixtures.fetch_search
+        cache_db = (
+            args.cache_db
+            if args.cache_db != DEFAULT_CACHE_PATH
+            else Path("sitegap_dry_run_cache.db")
+        )
+    else:
+        api_key = os.environ.get("GOOGLE_PLACES_API_KEY", "")
+        if not api_key:
+            print("Error: add GOOGLE_PLACES_API_KEY to .env", file=sys.stderr)
+            return 2
+        page_fetcher = None
+        search_fetcher = None
+        cache_db = args.cache_db
 
     try:
         leads = collect_leads(
@@ -150,12 +182,13 @@ def main() -> int:
             args.location,
             args.queries or list(DEFAULT_QUERIES),
             args.limit,
+            page_fetcher,
         )
     except PlacesError as error:
         print(f"Error: {error}", file=sys.stderr)
         return 1
 
-    conn = None if args.no_cache else cache.connect(args.cache_db)
+    conn = None if args.no_cache else cache.connect(cache_db)
     if conn is not None:
         for lead in leads:
             cache.upsert_lead(conn, lead)
@@ -167,7 +200,11 @@ def main() -> int:
             lead["email_source"] = ""
     else:
         add_public_emails(
-            leads, conn, refresh_emails=args.refresh_emails, refresh_days=args.refresh_days
+            leads,
+            conn,
+            refresh_emails=args.refresh_emails,
+            refresh_days=args.refresh_days,
+            fetch_search=search_fetcher,
         )
 
     write_report(args.output, leads)

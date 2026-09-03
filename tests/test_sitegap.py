@@ -5,7 +5,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
 
-from src import cache
+from src import cache, fixtures
+from src.__main__ import add_public_emails, collect_leads
 from src.config import load_dotenv
 from src.email_search import find_public_email
 from src.http import fetch
@@ -282,6 +283,35 @@ class CacheTests(unittest.TestCase):
 
     def test_missing_email_check_is_not_fresh(self) -> None:
         self.assertFalse(cache.is_email_check_fresh(None, refresh_days=30))
+
+
+class DryRunTests(unittest.TestCase):
+    def test_full_pipeline_runs_on_sample_data_without_network(self) -> None:
+        leads = collect_leads(
+            "dry-run", "Porto, Portugal", ["dentists"], 20, fixtures.fetch_page
+        )
+        # The sample business with a real website must be filtered out.
+        self.assertEqual(len(leads), 3)
+
+        with TemporaryDirectory() as directory:
+            conn = cache.connect(Path(directory) / "cache.db")
+            for lead in leads:
+                cache.upsert_lead(conn, lead)
+
+            add_public_emails(
+                leads,
+                conn,
+                refresh_emails=False,
+                refresh_days=30,
+                fetch_search=fixtures.fetch_search,
+            )
+
+        by_name = {lead["name"]: lead for lead in leads}
+        self.assertEqual(
+            by_name["Clinica Dentaria Sorriso"]["email_confidence"], "business_domain"
+        )
+        self.assertEqual(by_name["Oficina do Zé"]["website_gap_reason"], "social_only")
+        self.assertEqual(by_name["Cabeleireiro Beleza Pura"]["email"], "")
 
 
 if __name__ == "__main__":
