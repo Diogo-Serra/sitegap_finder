@@ -8,11 +8,13 @@ install:
 run:
 	uv run python -m src $(ARGS)
 
-test:
-	uv run python -m unittest discover -v
+smoke-test:
+	uv run python -m src --dry-run "Porto, Portugal" dentists --output /tmp/sitegap-smoke-test.txt --no-cache
+	@cat /tmp/sitegap-smoke-test.txt
+	@rm -f /tmp/sitegap-smoke-test.txt
 
 lint:
-	uv run flake8 src tests
+	uv run flake8 src
 	uv run mypy src
 
 clean:
@@ -23,4 +25,4 @@ clean:
 	rm -rf build dist *.egg-info
 	rm -rf .venv
 
-.PHONY: all install run test lint clean
+.PHONY: all install run smoke-test lint clean

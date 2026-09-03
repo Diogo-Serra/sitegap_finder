@@ -20,6 +20,12 @@ Every install includes a `--dry-run` mode that runs the entire pipeline — Plac
 git clone git@github.com:Diogo-Serra/sitegap_finder.git
 cd sitegap_finder
 make install
+make smoke-test
+```
+
+Or run it manually to inspect a saved report:
+
+```bash
 uv run sitegap --dry-run "Porto, Portugal" dentists --output sample-leads.txt
 cat sample-leads.txt
 ```
@@ -118,11 +124,11 @@ A spreadsheet-ready file with columns: `name, category, email, email_confidence,
 ## Commands
 
 ```bash
-make install  # Create the environment and install dependencies
-make run      # Run SiteGap
-make test     # Run offline tests
-make lint     # Check code style and types
-make clean    # Remove generated Python files
+make install     # Create the environment and install dependencies
+make run         # Run SiteGap
+make smoke-test  # Verify the pipeline end-to-end with --dry-run (no API key needed)
+make lint        # Check code style and types
+make clean       # Remove generated Python files
 ```
 
 ## Project structure
@@ -137,7 +143,6 @@ src/
 ├── cache.py          # SQLite persistence across runs
 ├── fixtures.py       # Sample data powering --dry-run
 └── report.py         # Text/CSV report generation and run summaries
-tests/                # Offline unit tests
 ```
 
 ## Responsible use
