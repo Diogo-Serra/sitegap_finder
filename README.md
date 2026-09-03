@@ -12,31 +12,11 @@ SiteGap finds local businesses that have no real website — whether Google Plac
 
 Email addresses are never guessed. If no reliable public email is found, the field stays empty.
 
-## Try it instantly (no API key needed)
-
-Every install includes a `--dry-run` mode that runs the entire pipeline — Places filtering, website-gap detection, email confidence scoring, caching, and report generation — on built-in sample data. Use it to confirm your setup works before spending any API quota:
-
-```bash
-git clone git@github.com:Diogo-Serra/sitegap_finder.git
-cd sitegap_finder
-make install
-make smoke-test
-```
-
-Or run it manually to inspect a saved report:
-
-```bash
-uv run sitegap --dry-run "Porto, Portugal" dentists --output sample-leads.txt
-cat sample-leads.txt
-```
-
-You should see 3 sample leads (one plain "no website" gap with a real matched email, one "social media page only" gap, and one with no email found), while a 4th sample business with a real website is correctly filtered out. Run the same command again and the log will show `Using cached email...` instead of re-checking, proving the cache works.
-
 ## Requirements
 
 - Python 3.10 or newer
 - [uv](https://docs.astral.sh/uv/)
-- A Google Cloud API key with **Places API (New)** enabled — only needed for real (non-dry-run) searches
+- A Google Cloud API key with **Places API (New)** enabled
 
 No third-party Python dependencies are required — everything runs on the standard library.
 
@@ -54,6 +34,8 @@ Open `.env` and add your key:
 ```dotenv
 GOOGLE_PLACES_API_KEY="your-api-key"
 ```
+
+That's the only manual step required. Everything else is ready to run.
 
 ## Usage
 
@@ -77,13 +59,12 @@ You can also run the CLI directly:
 uv run sitegap "Lisbon, Portugal" dentists electricians --limit 20
 ```
 
-Start with a small `--limit` (for example `5`) on your first real run to confirm results look right and check your Google Cloud billing dashboard before scaling up.
+Start with a small `--limit` (for example `5`) on your first run to confirm results look right and check your Google Cloud billing dashboard before scaling up.
 
 ### Useful flags
 
 | Flag | Purpose |
 | --- | --- |
-| `--dry-run` | Run the full pipeline on built-in sample data; no API key or network calls. Great for testing. |
 | `--output FILE` | Report path. Use a `.csv` extension for a spreadsheet-ready export, otherwise a plain-text report is written. |
 | `--cache-db FILE` | SQLite database used to remember leads and email results across runs (default `sitegap_cache.db`). |
 | `--no-cache` | Disable the cache entirely. |
@@ -124,11 +105,10 @@ A spreadsheet-ready file with columns: `name, category, email, email_confidence,
 ## Commands
 
 ```bash
-make install     # Create the environment and install dependencies
-make run         # Run SiteGap
-make smoke-test  # Verify the pipeline end-to-end with --dry-run (no API key needed)
-make lint        # Check code style and types
-make clean       # Remove generated Python files
+make install  # Create the environment and install dependencies
+make run      # Run SiteGap
+make lint     # Check code style and types
+make clean    # Remove generated Python files
 ```
 
 ## Project structure
@@ -141,7 +121,6 @@ src/
 ├── places.py         # Google Places search, filtering, and website-gap detection
 ├── email_search.py   # Public email discovery and confidence scoring
 ├── cache.py          # SQLite persistence across runs
-├── fixtures.py       # Sample data powering --dry-run
 └── report.py         # Text/CSV report generation and run summaries
 ```
 
