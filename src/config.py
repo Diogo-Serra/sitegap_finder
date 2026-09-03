@@ -4,6 +4,9 @@ import os
 from pathlib import Path
 
 
+DEFAULT_CACHE_PATH = Path("sitegap_cache.db")
+DEFAULT_REFRESH_DAYS = 30
+
 DEFAULT_QUERIES = (
     "psychologists",
     "plumbers",

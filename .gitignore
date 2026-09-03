@@ -9,3 +9,4 @@ build/
 dist/
 leads.txt
 *-leads.txt
+*.db
